@@ -62,7 +62,10 @@ void DumpParticle::write()
       if (universe->nprocs > 1) {
 	fdump += "proc-" + to_string(universe->me) + ".";
       }
-      fdump += to_string(update->ntimestep);
+  		char no[8] = {0};
+  		memset(no, 0, sizeof(no));
+  		sprintf(no, "%07ld", update->ntimestep);
+      fdump += std::string(no);
       if (filename.size()-pos_asterisk-1 > 0)
 	fdump += filename.substr(pos_asterisk+1, filename.size()-pos_asterisk-1);
     }
