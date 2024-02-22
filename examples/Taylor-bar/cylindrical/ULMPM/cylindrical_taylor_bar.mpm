@@ -76,7 +76,7 @@ fix(v0Ball1, initial_velocity_particles, gBall1, v, NULL, NULL)
 
 N_log = 10
 dump(dump1, all, particle, N_log, dump_p.*.LAMMPS, x, y, z, vx, vy, vz, s11, s22, s33, s12, s13, s23, seq, volume, mass)
-dump(dump2, all, grid, N_log, dump_g.*.LAMMPS, x, y, z)
+#dump(dump2, all, grid, N_log, dump_g.*.LAMMPS, x, y, z)
 set_output(N_log)
 
 #--------------------- RUN ------------------------#
@@ -86,4 +86,4 @@ log_modify(custom, step, dt, time)
 run(1)
 
 fix(BC_Wall, velocity_nodes, groupn2, 0, NULL, NULL)
-run(20000)
+run(2047)
