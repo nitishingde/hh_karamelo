@@ -341,50 +341,41 @@ void Solid::compute_velocity_nodes(bool reset)
   int ip;
   int nn = grid->nnodes_local + grid->nnodes_ghost;
 
-  for (int in = 0; in < nn; in++)
-  {
-    if (reset)
-    {
+  for(int in = 0; in < nn; in++) {
+    if(reset) {
       grid->v[in].setZero();
       //grid->v_update[in].setZero();
-      if (grid->rigid[in]) {
-	grid->mb[in].setZero();
+      if(grid->rigid[in]) {
+      	grid->mb[in].setZero();
       }
     }
 
-    if (grid->rigid[in] && !mat->rigid) continue;
+    if(grid->rigid[in] && !mat->rigid) continue;
 
-    if (grid->mass[in] > 0)
-    {
+    if(grid->mass[in] > 0) {
       vtemp.setZero();
-      if (grid->rigid[in])
-	vtemp_update.setZero();
+      if(grid->rigid[in])
+    	  vtemp_update.setZero();
 
-      for (int j = 0; j < numneigh_np[in]; j++)
-      {
+      for(int j = 0; j < numneigh_np[in]; j++) {
         ip = neigh_np[in][j];
-	if (grid->rigid[in]) {
-	  vtemp_update += (wf_np[in][j] * mass[ip]) * v_update[ip];
-	}
-	if (update->method->ge) {
-	  vtemp += (wf_np[in][j] * mass[ip]) *
-	    (v[ip] + L[ip] * (grid->x0[in] - x[ip]));
-	} else {
-	  vtemp += wf_np[in][j] * mass[ip] * v[ip];
-	}
+	      if(grid->rigid[in]) {
+	        vtemp_update += (wf_np[in][j] * mass[ip]) * v_update[ip];
+	      }
+	      if(update->method->ge) {
+	        vtemp += (wf_np[in][j] * mass[ip]) * (v[ip] + L[ip] * (grid->x0[in] - x[ip]));
+	      }
+        else {
+	        vtemp += wf_np[in][j] * mass[ip] * v[ip];
+	      }
         // grid->v[in] += (wf_np[in][j] * mass[ip]) * v[ip]/ grid->mass[in];
       }
       vtemp /= grid->mass[in];
       grid->v[in] += vtemp;
-      if (grid->rigid[in]) {
-	vtemp_update /= grid->mass[in];
-	grid->mb[in] += vtemp_update; // This should be grid->v_update[in], but we are using mb to make the reduction of ghost particles easy. It will be copied to grid->v_update[in] in Grid::update_grid_velocities()
+      if(grid->rigid[in]) {
+	      vtemp_update /= grid->mass[in];
+	      grid->mb[in] += vtemp_update; // This should be grid->v_update[in], but we are using mb to make the reduction of ghost particles easy. It will be copied to grid->v_update[in] in Grid::update_grid_velocities()
       }
-      // if (isnan(grid->v_update[in][0]))
-      //   cout << "in=" << in << "\tvn=[" << grid->v[in][0] << ", " << grid->v[in][1]
-      //        << ", " << grid->v[in][2] << "]\tvp=[" << v[ip][0] << ", " << v[ip][1]
-      //        << ", " << v[ip][2] << "],\tvn_update=[" << grid->v_update[in][0]
-      //        << ", " << grid->v_update[in][1] << ", " << grid->v_update[in][2] << "]\n";
     }
   }
 }
@@ -574,47 +565,25 @@ void Solid::compute_external_and_internal_forces_nodes_UL_MLS(bool reset) {
 }
 
 void Solid::compute_particle_accelerations_velocities_and_positions() {
-
   vector<Eigen::Vector3d> vc_update;
   vc_update.resize(nc);
-
   int in;
-
-  bool update_corners;
   double inv_dt = 1.0/update->dt;
-  Vector3d dummy;
 
-  if ((method_type.compare("tlcpdi") == 0 ||
-       method_type.compare("ulcpdi") == 0) &&
-      (update->method->style == 1)) {
-    update_corners = true;
-  } else
-    update_corners = false;
-
-  for (int ip = 0; ip < np_local; ip++) {
+  for(int ip = 0; ip < np_local; ip++) {
     v_update[ip].setZero();
     a[ip].setZero();
-    if (update_corners)
-      for (int i = 0; i < nc; i++)
-        vc_update[i].setZero();
 
-    for (int j = 0; j < numneigh_pn[ip]; j++) {
+    for(int j = 0; j < numneigh_pn[ip]; j++) {
       in = neigh_pn[ip][j];
       v_update[ip] += wf_pn[ip][j] * grid->v_update[in];
-      a[ip] += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
-      //x[ip] += update->dt * wf_pn[ip][j] * grid->v_update[in];
-
-      if (update_corners) {
-        for (int ic = 0; ic < nc; ic++) {
-          vc_update[ic] += wf_pn_corners[nc * ip + ic][j] * grid->v_update[in];
-        }
-      }
+      a[ip]        += wf_pn[ip][j] * (grid->v_update[in] - grid->v[in]);
     }
     a[ip] *= inv_dt;
-    f[ip] = a[ip] * mass[ip];
+    f[ip]  = a[ip] * mass[ip];
     x[ip] += update->dt * v_update[ip];
 
-    if (!is_TL) {
+    if(!is_TL) {
       // Check if the particle is within the box's domain:
       if (domain->inside(x[ip]) == 0) {
         cout << "Error: Particle " << ip << " left the domain ("
@@ -623,12 +592,6 @@ void Solid::compute_particle_accelerations_velocities_and_positions() {
              << domain->boxlo[2] << "," << domain->boxhi[2] << ",):\n"
              << x[ip] << endl;
         error->one(FLERR, "");
-      }
-    }
-
-    if (update_corners) {
-      for (int ic = 0; ic < nc; ic++) {
-        xpc[nc * ip + ic] += update->dt * vc_update[ic];
       }
     }
   }
@@ -784,7 +747,7 @@ void Solid::compute_particle_acceleration()
 }
 
 void Solid::update_particle_velocities(double alpha) {
-  for (int ip = 0; ip < np_local; ip++) {
+  for(int ip = 0; ip < np_local; ip++) {
     v[ip] = (1 - alpha) * v_update[ip] + alpha * (v[ip] + update->dt * a[ip]);
   }
 }
@@ -870,67 +833,19 @@ void Solid::compute_rate_deformation_gradient_UL(bool doublemapping)
   else
     vn = &grid->v_update;
 
-  if (domain->dimension == 1)
-    {
-      for (int ip = 0; ip < np_local; ip++)
-	{
+  for(int ip = 0; ip < np_local; ip++) {
 	  L[ip].setZero();
-	  for (int j = 0; j < numneigh_pn[ip]; j++)
-	    {
-	      in = neigh_pn[ip][j];
-	      L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
-	    }
-	}
-    }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == false))
-    {
-      for (int ip = 0; ip < np_local; ip++)
-	{
-	  L[ip].setZero();
-	  for (int j = 0; j < numneigh_pn[ip]; j++)
-	    {
-	      in = neigh_pn[ip][j];
-	      L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
-	      L[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
-	      L[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
-	      L[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
-	    }
-	}
-    }
-  else if ((domain->dimension == 2) && (domain->axisymmetric == true))
-    {
-      for (int ip = 0; ip < np_local; ip++)
-	{
-	  L[ip].setZero();
-	  for (int j = 0; j < numneigh_pn[ip]; j++)
-	    {
-	      in = neigh_pn[ip][j];
-	      L[ip](0, 0) += (*vn)[in][0] * wfd_pn[ip][j][0];
-	      L[ip](0, 1) += (*vn)[in][0] * wfd_pn[ip][j][1];
-	      L[ip](1, 0) += (*vn)[in][1] * wfd_pn[ip][j][0];
-	      L[ip](1, 1) += (*vn)[in][1] * wfd_pn[ip][j][1];
-	      L[ip](2, 2) += (*vn)[in][0] * wf_pn[ip][j] / x[ip][0];
-	    }
-	}
-    }
-  else if (domain->dimension == 3)
-    {
-      for (int ip = 0; ip < np_local; ip++)
-	{
-	  L[ip].setZero();
-	  for (int j = 0; j < numneigh_pn[ip]; j++)
-	    {
-	      in = neigh_pn[ip][j];
-	      L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
-	      L[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
-	      L[ip](0,2) += (*vn)[in][0]*wfd_pn[ip][j][2];
-	      L[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
-	      L[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
-	      L[ip](1,2) += (*vn)[in][1]*wfd_pn[ip][j][2];
-	      L[ip](2,0) += (*vn)[in][2]*wfd_pn[ip][j][0];
-	      L[ip](2,1) += (*vn)[in][2]*wfd_pn[ip][j][1];
-	      L[ip](2,2) += (*vn)[in][2]*wfd_pn[ip][j][2];
-      }
+	  for(int j = 0; j < numneigh_pn[ip]; j++) {
+      in = neigh_pn[ip][j];
+      L[ip](0,0) += (*vn)[in][0]*wfd_pn[ip][j][0];
+      L[ip](0,1) += (*vn)[in][0]*wfd_pn[ip][j][1];
+      L[ip](0,2) += (*vn)[in][0]*wfd_pn[ip][j][2];
+      L[ip](1,0) += (*vn)[in][1]*wfd_pn[ip][j][0];
+      L[ip](1,1) += (*vn)[in][1]*wfd_pn[ip][j][1];
+      L[ip](1,2) += (*vn)[in][1]*wfd_pn[ip][j][2];
+      L[ip](2,0) += (*vn)[in][2]*wfd_pn[ip][j][0];
+      L[ip](2,1) += (*vn)[in][2]*wfd_pn[ip][j][1];
+      L[ip](2,2) += (*vn)[in][2]*wfd_pn[ip][j][2];
     }
   }
 }
@@ -1157,7 +1072,7 @@ void Solid::update_deformation_gradient()
   if (mat->rigid)
     return;
 
-  bool status, nh, vol_cpdi;
+  bool nh;
   Eigen::Matrix3d eye;
   eye.setIdentity();
 
@@ -1166,47 +1081,13 @@ void Solid::update_deformation_gradient()
   else
     nh = false;
 
-  if ((method_type.compare("tlcpdi") == 0 ||
-       method_type.compare("ulcpdi") == 0) &&
-      (update->method->style == 1))
-  {
-    vol_cpdi = true;
-  }
-  else
-    vol_cpdi = false;
-
-  for (int ip = 0; ip < np_local; ip++)
-  {
-
-    if (is_TL)
-      F[ip] += update->dt * Fdot[ip];
-    else
-      F[ip] = (eye + update->dt * L[ip]) * F[ip];
-
+  for(int ip = 0; ip < np_local; ip++) {
+    F[ip]    = (eye + update->dt * L[ip]) * F[ip];
     Finv[ip] = F[ip].inverse();
+    J[ip]    = F[ip].determinant();
+    vol[ip]  = J[ip] * vol0[ip];
 
-    if (vol_cpdi)
-    {
-      vol[ip] = 0.5 * (xpc[nc * ip + 0][0] * xpc[nc * ip + 1][1] -
-                       xpc[nc * ip + 1][0] * xpc[nc * ip + 0][1] +
-                       xpc[nc * ip + 1][0] * xpc[nc * ip + 2][1] -
-                       xpc[nc * ip + 2][0] * xpc[nc * ip + 1][1] +
-                       xpc[nc * ip + 2][0] * xpc[nc * ip + 3][1] -
-                       xpc[nc * ip + 3][0] * xpc[nc * ip + 2][1] +
-                       xpc[nc * ip + 3][0] * xpc[nc * ip + 0][1] -
-                       xpc[nc * ip + 0][0] * xpc[nc * ip + 3][1]);
-      // rho[ip] = rho0[ip];
-      J[ip] = vol[ip] / vol0[ip];
-    }
-    else
-    {
-      J[ip]   = F[ip].determinant();
-      vol[ip] = J[ip] * vol0[ip];
-    }
-
-
-    if (J[ip] <= 0.0 && damage[ip] < 1.0)
-    {
+    if(J[ip] <= 0.0 && damage[ip] < 1.0) {
       cout << "Error: J[" << ptag[ip] << "]<=0.0 == " << J[ip] << endl;
       cout << "F[" << ptag[ip] << "]:" << endl << F[ip] << endl;
       cout << "Fdot[" << ptag[ip] << "]:" << endl << Fdot[ip] << endl;
@@ -1215,31 +1096,10 @@ void Solid::update_deformation_gradient()
     }
     rho[ip] = rho0[ip] / J[ip];
 
-    if (!nh) {
+    if(!nh) {
       // Only done if not Neo-Hookean:
-
-      if (is_TL) {
-        status = PolDec(F[ip], R[ip]); // polar decomposition of the deformation
-                                       // gradient, F = R * U
-
-        // In TLMPM. L is computed from Fdot:
-        L[ip] = Fdot[ip] * Finv[ip];
-        D[ip] = 0.5 * (R[ip].transpose() * (L[ip] + L[ip].transpose()) * R[ip]);
-
-        if (!status) {
-          cout << "Polar decomposition of deformation gradient failed for "
-                  "particle "
-               << ip << ".\n";
-          cout << "F:" << endl << F[ip] << endl;
-          cout << "timestep" << endl << update->ntimestep << endl;
-          error->one(FLERR, "");
-        }
-
-      } else
-        D[ip] = 0.5 * (L[ip] + L[ip].transpose());
+      D[ip] = 0.5 * (L[ip] + L[ip].transpose());
     }
-
-    // strain_increment[ip] = update->dt * D[ip];
   }
 }
 
@@ -1265,171 +1125,83 @@ void Solid::update_stress()
 
   eye.setIdentity();
 
-  if (lin) {
-    for (int ip = 0; ip < np_local; ip++) {
-      strain_increment = update->dt * D[ip];
-      strain_el[ip] += strain_increment;
-      sigma[ip] += 2 * mat->G * strain_increment +
-                   mat->lambda * strain_increment.trace() * eye;
+  vector<double> pH(np_local, 0);
+  vector<double> plastic_strain_increment(np_local, 0);
+  vector<Eigen::Matrix3d> sigma_dev;
+  sigma_dev.resize(np_local);
+  double tav = 0;
 
-      if (is_TL) {
-	vol0PK1[ip] = vol0[ip] * J[ip] *
-	  (R[ip] * sigma[ip] * R[ip].transpose()) *
-	  Finv[ip].transpose();
-      }
+  for(int ip = 0; ip < np_local; ip++) {
+    if(mat->cp != 0) {
+      mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip], damage[ip], D[ip], grid->cellsize, T[ip]);
+      pH[ip] += mat->temp->compute_thermal_pressure(T[ip]);
+      sigma_dev[ip] = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment[ip], eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip], T[ip]);
     }
-  } else if (nh) {
-    for (int ip = 0; ip < np_local; ip++) {
-      // Neo-Hookean material:
-      FinvT = Finv[ip].transpose();
-      PK1 = mat->G * (F[ip] - FinvT) + mat->lambda * log(J[ip]) * FinvT;
-      vol0PK1[ip] = vol0[ip] * PK1;
-      sigma[ip] = 1.0 / J[ip] * (F[ip] * PK1.transpose());
-
-      strain_el[ip] =
-          0.5 * (F[ip].transpose() * F[ip] - eye); // update->dt * D[ip];
+    else {
+      mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip], damage[ip], D[ip], grid->cellsize);
+      sigma_dev[ip] = mat->strength->update_deviatoric_stress(sigma[ip], D[ip], plastic_strain_increment[ip], eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
     }
-  } else {
 
-    vector<double> pH(np_local, 0);
-    vector<double> plastic_strain_increment(np_local, 0);
-    vector<Eigen::Matrix3d> sigma_dev;
-    sigma_dev.resize(np_local);
-    double tav = 0;
+    eff_plastic_strain[ip] += plastic_strain_increment[ip];
 
-    for (int ip = 0; ip < np_local; ip++) {
+    // // compute a characteristic time over which to average the plastic
+    // strain
 
-      if (mat->cp != 0) {
-        mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip],
-                                   damage[ip], D[ip], grid->cellsize, T[ip]);
-        pH[ip] += mat->temp->compute_thermal_pressure(T[ip]);
+    tav = 1000 * grid->cellsize / mat->signal_velocity;
 
-        sigma_dev[ip] = mat->strength->update_deviatoric_stress(
-            sigma[ip], D[ip], plastic_strain_increment[ip],
-            eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip],
-            T[ip]);
-      } else {
-        mat->eos->compute_pressure(pH[ip], ienergy[ip], J[ip], rho[ip],
-                                   damage[ip], D[ip], grid->cellsize);
-        sigma_dev[ip] = mat->strength->update_deviatoric_stress(
-            sigma[ip], D[ip], plastic_strain_increment[ip],
-            eff_plastic_strain[ip], eff_plastic_strain_rate[ip], damage[ip]);
-      }
+    eff_plastic_strain_rate[ip] -= eff_plastic_strain_rate[ip] * update->dt / tav;
+    eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
+    eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
 
-      eff_plastic_strain[ip] += plastic_strain_increment[ip];
+    if(mat->damage != nullptr) {
+	    mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip], sigma_dev[ip], eff_plastic_strain_rate[ip], plastic_strain_increment[ip]);
+    }
 
-      // // compute a characteristic time over which to average the plastic
-      // strain
+    if(mat->cp != 0) {
+      flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
+      mat->temp->compute_heat_source(T[ip], gamma[ip], flow_stress, eff_plastic_strain_rate[ip]);
+      gamma[ip] *= vol[ip] * mat->invcp;
+    }
 
-      tav = 1000 * grid->cellsize / mat->signal_velocity;
+    if(damage[ip] == 0 || pH[ip] >= 0)
+	    sigma[ip] = -pH[ip] * eye + sigma_dev[ip];
+    else
+	    sigma[ip] = -pH[ip] * (1.0 - damage[ip])* eye + sigma_dev[ip];
 
-      eff_plastic_strain_rate[ip] -=
-          eff_plastic_strain_rate[ip] * update->dt / tav;
-      eff_plastic_strain_rate[ip] += plastic_strain_increment[ip] / tav;
-      eff_plastic_strain_rate[ip] = MAX(0.0, eff_plastic_strain_rate[ip]);
-
-      if (mat->damage != nullptr) {
-	if (update->method->temp) {
-	  mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
-				      sigma_dev[ip], eff_plastic_strain_rate[ip],
-				      plastic_strain_increment[ip], T[ip]);
-	} else {
-	  mat->damage->compute_damage(damage_init[ip], damage[ip], pH[ip],
-				      sigma_dev[ip], eff_plastic_strain_rate[ip],
-				      plastic_strain_increment[ip]);
-	}
-      }
-
-      if (mat->cp != 0) {
-	flow_stress = SQRT_3_OVER_2 * sigma_dev[ip].norm();
-        mat->temp->compute_heat_source(T[ip], gamma[ip], flow_stress,
-                                       eff_plastic_strain_rate[ip]);
-        if (is_TL)
-          gamma[ip] *= vol0[ip] * mat->invcp;
-        else
-          gamma[ip] *= vol[ip] * mat->invcp;
-      }
-
-      if (damage[ip] == 0 || pH[ip] >= 0)
-	sigma[ip] = -pH[ip] * eye + sigma_dev[ip];
-      else
-	sigma[ip] = -pH[ip] * (1.0 - damage[ip])* eye + sigma_dev[ip];
-
-      if (damage[ip] > 1e-10) {
-        strain_el[ip] =
-            (update->dt * D[ip].trace() + strain_el[ip].trace()) / 3.0 * eye +
-            sigma_dev[ip] / (mat->G * (1 - damage[ip]));
-      } else {
-        strain_el[ip] =
-            (update->dt * D[ip].trace() + strain_el[ip].trace()) / 3.0 * eye +
-            sigma_dev[ip] / mat->G;
-      }
-
-      if (is_TL) {
-	vol0PK1[ip] = vol0[ip] * J[ip] *
-	  (R[ip] * sigma[ip] * R[ip].transpose()) *
-	  Finv[ip].transpose();
-      }
+    if(damage[ip] > 1e-10) {
+      strain_el[ip] = (update->dt * D[ip].trace() + strain_el[ip].trace()) / 3.0 * eye + sigma_dev[ip] / (mat->G * (1 - damage[ip]));
+    }
+    else {
+      strain_el[ip] = (update->dt * D[ip].trace() + strain_el[ip].trace()) / 3.0 * eye + sigma_dev[ip] / mat->G;
     }
   }
 
   double min_h_ratio = 1.0;
 
-  for (int ip = 0; ip < np_local; ip++) {
+  for(int ip = 0; ip < np_local; ip++) {
     if (damage[ip] >= 1.0)
       continue;
 
-    max_p_wave_speed =
-        MAX(max_p_wave_speed,
-            sqrt((mat->K + FOUR_THIRD * mat->G) / rho[ip]) +
-                MAX(MAX(fabs(v[ip](0)), fabs(v[ip](1))), fabs(v[ip](2))));
+    max_p_wave_speed = MAX(max_p_wave_speed, sqrt((mat->K + FOUR_THIRD * mat->G) / rho[ip]) + MAX(MAX(fabs(v[ip](0)), fabs(v[ip](1))), fabs(v[ip](2))));
 
-    if (std::isnan(max_p_wave_speed)) {
+    if(std::isnan(max_p_wave_speed)) {
       cout << "Error: max_p_wave_speed is nan with ip=" << ip
            << ", ptag[ip]=" << ptag[ip] << ", rho0[ip]=" << rho0[ip]<< ", rho[ip]=" << rho[ip]
            << ", K=" << mat->K << ", G=" << mat->G << ", J[ip]=" << J[ip]
            << endl;
       error->one(FLERR, "");
-    } else if (max_p_wave_speed < 0.0) {
+    }
+    else if(max_p_wave_speed < 0.0) {
       cout << "Error: max_p_wave_speed= " << max_p_wave_speed
            << " with ip=" << ip << ", rho[ip]=" << rho[ip] << ", K=" << mat->K
            << ", G=" << mat->G << endl;
       error->one(FLERR, "");
     }
-
-    if (is_TL) {
-      EigenSolver<Matrix3d> esF(F[ip], false);
-      if (esF.info()!= Success) {
-	min_h_ratio = MIN(min_h_ratio,1.0);
-      } else {
-	min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[0].real()));
-	min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[1].real()));
-	min_h_ratio = MIN(min_h_ratio,fabs(esF.eigenvalues()[2].real()));
-      }
-
-      if (min_h_ratio == 0) {
-	cout << "min_h_ratio == 0 with ip=" << ip
-	     << "F=\n" <<  F[ip] << endl
-	     << "eigenvalues of F:" << esF.eigenvalues()[0].real() << "\t" << esF.eigenvalues()[1].real() << "\t" << esF.eigenvalues()[2].real() << endl;
-	cout << "esF.info()=" << esF.info() << endl;
-	error->one(FLERR, "");
-      }
-
-      // // dt should also be lower than the inverse of \dot{F}e_i.
-      // EigenSolver<Matrix3d> esFdot(Fdot[ip], false);
-      // if (esFdot.info()!= Success) {
-      // 	double lambda = fabs(esFdot.eigenvalues()[0].real());
-      // 	lambda = MAX(lambda, fabs(esFdot.eigenvalues()[1].real()));
-      // 	lambda = MAX(lambda, fabs(esFdot.eigenvalues()[2].real()));
-      // 	dtCFL = MIN(dtCFL, 0.5/lambda);
-      // }
-    }
   }
 
   dtCFL = MIN(dtCFL, grid->cellsize * min_h_ratio / max_p_wave_speed);
 
-  if (std::isnan(dtCFL))
-  {
+  if(std::isnan(dtCFL)) {
     cout << "Error: dtCFL = " << dtCFL << "\n";
     cout << "max_p_wave_speed = " << max_p_wave_speed
          << ", grid->cellsize=" << grid->cellsize << endl;

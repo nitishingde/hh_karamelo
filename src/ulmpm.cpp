@@ -85,17 +85,14 @@ void ULMPM::setup(vector<string> args)
   }
 }
 
-void ULMPM::compute_grid_weight_functions_and_gradients()
-{
+void ULMPM::compute_grid_weight_functions_and_gradients() {
   bigint nsolids, np_local, nnodes_local, nnodes_ghost, nnodes;
 
   nsolids = domain->solids.size();
 
-  if (nsolids)
-  {
-    for (int isolid = 0; isolid < nsolids; isolid++)
-    {
-      if (update->ntimestep == 0 && domain->solids[isolid]->mat->rigid)
+  if(nsolids) {
+    for(int isolid = 0; isolid < nsolids; isolid++) {
+      if(update->ntimestep == 0 && domain->solids[isolid]->mat->rigid)
         rigid_solids = 1;
 
       np_local = domain->solids[isolid]->np_local;
@@ -137,200 +134,146 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
       r.setZero();
 
-      for (int in = 0; in < nnodes_local + nnodes_ghost; in++)
-      {
+      for(int in = 0; in < nnodes_local + nnodes_ghost; in++){
         (*neigh_np)[in].clear();
         (*numneigh_np)[in] = 0;
         (*wf_np)[in].clear();
         (*wfd_np)[in].clear();
       }
 
-      if (np_local && (nnodes_local + nnodes_ghost))
-      {
-        for (int ip = 0; ip < np_local; ip++)
-        {
+      if(np_local && (nnodes_local + nnodes_ghost)) {
+        for(int ip = 0; ip < np_local; ip++) {
           (*neigh_pn)[ip].clear();
           (*numneigh_pn)[ip] = 0;
           (*wf_pn)[ip].clear();
           (*wfd_pn)[ip].clear();
 
           // Calculate what nodes particle ip will interact with:
-
           n_neigh.clear();
-
-          if (update->shape_function == Update::ShapeFunctions::LINEAR)
-          {
-	    i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
-	    j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
-	    k0 = (int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize);
-
-            for (int i = i0; i < i0 + 2; i++)
-            {
-              if (ny > 1)
-              {
-                for (int j = j0; j < j0 + 2; j++)
-                {
-                  if (nz > 1)
-                  {
-                    for (int k = k0; k < k0 + 2; k++)
-                    {
-		      tag = nz * ny * i + nz * j + k;
-		      if (tag < nnodes) {
-			inn = (*map_ntag)[tag];
-			if (inn != -1) {
-			  n_neigh.push_back(inn);
-			}
-		      }
+          if(update->shape_function == Update::ShapeFunctions::LINEAR) {
+            i0 = (int) (((*xp)[ip][0] - domain->boxlo[0])*inv_cellsize);
+            j0 = (int) (((*xp)[ip][1] - domain->boxlo[1])*inv_cellsize);
+            k0 = (int) (((*xp)[ip][2] - domain->boxlo[2])*inv_cellsize);
+            for(int i = i0; i < i0 + 2; i++) {
+              if(ny > 1) {
+                for(int j = j0; j < j0 + 2; j++) {
+                  if(nz > 1) {
+                    for(int k = k0; k < k0 + 2; k++) {
+                      tag = nz * ny * i + nz * j + k;
+                      if(tag < nnodes) {
+                        inn = (*map_ntag)[tag];
+                        if(inn != -1) {
+                          n_neigh.push_back(inn);
+                        }
+                      }
                     }
                   }
-                  else
-                  {
-		    tag = ny * i + j;
-		    if (tag < nnodes) {
-		      inn = (*map_ntag)[tag];
-		      if (inn != -1) {
-			n_neigh.push_back(inn);
-		      }
-		    }
+                  else {
+                    tag = ny * i + j;
+                    if(tag < nnodes) {
+                      inn = (*map_ntag)[tag];
+                      if(inn != -1) {
+                        n_neigh.push_back(inn);
+                      }
+                    }
                   }
                 }
               }
-              else
-              {
-		if (i < nnodes_local + nnodes_ghost)
+              else {
+                if(i < nnodes_local + nnodes_ghost)
                   n_neigh.push_back(i);
               }
             }
-	  } else {
-	    // cubic and quadratic B-splines
+          }
+          else {
+          // cubic and quadratic B-splines
             i0 = (int)(((*xp)[ip][0] - domain->boxlo[0]) * inv_cellsize - 1);
             j0 = (int)(((*xp)[ip][1] - domain->boxlo[1]) * inv_cellsize - 1);
             k0 = (int)(((*xp)[ip][2] - domain->boxlo[2]) * inv_cellsize - 1);
 
-            for (int i = i0; i < i0 + 4; i++) {
-              if (ny > 1) {
-                for (int j = j0; j < j0 + 4; j++) {
-                  if (nz > 1) {
-                    for (int k = k0; k < k0 + 4; k++) {
-		      tag = nz * ny * i + nz * j + k;
-		      if (tag < nnodes) {
-			inn = (*map_ntag)[tag];
-			if (inn != -1) {
-			  n_neigh.push_back(inn);
-			}
-		      }
+            for(int i = i0; i < i0 + 4; i++) {
+              if(ny > 1) {
+                for(int j = j0; j < j0 + 4; j++) {
+                  if(nz > 1) {
+                    for(int k = k0; k < k0 + 4; k++) {
+                      tag = nz * ny * i + nz * j + k;
+                      if (tag < nnodes) {
+                        inn = (*map_ntag)[tag];
+                        if (inn != -1) {
+                          n_neigh.push_back(inn);
+                        }
+                      }
                     }
                   }
-                  else
-                  {
-		    tag = ny * i + j;
-		    if (tag < nnodes) {
-		      inn = (*map_ntag)[tag];
-		      if (inn != -1) {
-			n_neigh.push_back(inn);
-		      }
-		    }
+                  else {
+                    tag = ny * i + j;
+                    if (tag < nnodes) {
+                      inn = (*map_ntag)[tag];
+                      if (inn != -1) {
+                        n_neigh.push_back(inn);
+                      }
+                    }
                   }
                 }
               }
-              else
-              {
-		if (i < nnodes_local + nnodes_ghost)
-                  n_neigh.push_back(i);
+              else {
+                if (i < nnodes_local + nnodes_ghost)
+                n_neigh.push_back(i);
               }
             }
           }
 
-          for (auto in : n_neigh)
-          {
-
+          for(auto in : n_neigh) {
             // Calculate the distance between each pair of particle/node:
-	    r = ((*xp)[ip] - (*xn)[in]) * inv_cellsize;
+            r = ((*xp)[ip] - (*xn)[in]) * inv_cellsize;
+            s[0] = basis_function(r[0], (*ntype)[in][0]);
+            wf = s[0];
+            if(wf != 0) {
+              if(domain->dimension >= 2) {
+                s[1] = basis_function(r[1], (*ntype)[in][1]);
+                wf *= s[1];
+              }
+              else s[1] = 1;
+              if(domain->dimension == 3 && wf != 0) {
+                s[2] = basis_function(r[2], (*ntype)[in][2]);
+                wf *= s[2];
+              }
+              else s[2] = 1;
 
-	    s[0] = basis_function(r[0], (*ntype)[in][0]);
-	    wf = s[0];
-	    if (wf != 0) {
-	      if (domain->dimension >= 2) {
-		s[1] = basis_function(r[1], (*ntype)[in][1]);
-		wf *= s[1];
-	      }
-	      else s[1] = 1;
-	      if (domain->dimension == 3 && wf != 0) {
-		s[2] = basis_function(r[2], (*ntype)[in][2]);
-		wf *= s[2];
-	      }
-	      else s[2] = 1;
-	    }
-
-	    if (wf != 0)
-            {
-              if (domain->solids[isolid]->mat->rigid)
+              if(domain->solids[isolid]->mat->rigid)
                 (*nrigid)[in] = true;
-              // // cout << in << "\t";
-              // // Check if this node is in n_neigh:
-              // if (find(n_neigh.begin(), n_neigh.end(), in) == n_neigh.end())
-              // {
-              // 	// in is not in n_neigh
-              //  	cout << "in=" << in << " not found in n_neigh for ip=" << ip
-              //  << " which is :["; 	for (auto ii: n_neigh) 	  cout << ii << ' ';
-              //  	cout << "]\n";
-              // }
 
-	      sd[0] = derivative_basis_function(r[0], (*ntype)[in][0], inv_cellsize);
-	      if (domain->dimension >= 2) sd[1] = derivative_basis_function(r[1], (*ntype)[in][1], inv_cellsize);
-	      if (domain->dimension == 3) sd[2] = derivative_basis_function(r[2], (*ntype)[in][2], inv_cellsize);
-
-	      (*neigh_pn)[ip].push_back(in);
+              sd[0] = derivative_basis_function(r[0], (*ntype)[in][0], inv_cellsize);
+              if(domain->dimension >= 2) sd[1] = derivative_basis_function(r[1], (*ntype)[in][1], inv_cellsize);
+              if(domain->dimension == 3) sd[2] = derivative_basis_function(r[2], (*ntype)[in][2], inv_cellsize);
+              (*neigh_pn)[ip].push_back(in);
               (*neigh_np)[in].push_back(ip);
               (*numneigh_pn)[ip]++;
               (*numneigh_np)[in]++;
-
               (*wf_pn)[ip].push_back(wf);
               (*wf_np)[in].push_back(wf);
-
-              
-              if (domain->dimension == 3)
-              {
-                wfd[0] = sd[0] * s[1] * s[2];
-                wfd[1] = s[0] * sd[1] * s[2];
-                wfd[2] = s[0] * s[1] * sd[2];
-              }
-              else if (domain->dimension == 2)
-              {
-                wfd[0] = sd[0] * s[1];
-                wfd[1] = s[0] * sd[1];
-                wfd[2] = 0;
-              }
-	      else
-              {
-                wfd[0] = sd[0];
-                wfd[1] = 0;
-                wfd[2] = 0;
-              }
+              wfd[0] = sd[0] * s[1] * s[2];
+              wfd[1] = s[0] * sd[1] * s[2];
+              wfd[2] = s[0] * s[1] * sd[2];
               (*wfd_pn)[ip].push_back(wfd);
               (*wfd_np)[in].push_back(wfd);
-              // cout << "ip=" << ip << ", in=" << in << ", wf=" << wf << ",
-              // wfd=[" << wfd[0] << "," << wfd[1] << "," << wfd[2] << "]" <<
-              // endl;
             }
           }
-          // cout << endl;
         }
       }
-      if (update_Di && apic)
+      if(update_Di && apic)
         domain->solids[isolid]->compute_inertia_tensor();
     }
-  } // end if (nsolids)
+  }
 
-  if (update->ntimestep == 0) {
+  if(update->ntimestep == 0) {
     // Reduce rigid_solids
     int rigid_solids_reduced = 0;
 
-    MPI_Allreduce(&rigid_solids, &rigid_solids_reduced, 1, MPI_INT, MPI_LOR,
-		  universe->uworld);
+    MPI_Allreduce(&rigid_solids, &rigid_solids_reduced, 1, MPI_INT, MPI_LOR, universe->uworld);
     rigid_solids = rigid_solids_reduced;
   }
-  if (rigid_solids) {
+  if(rigid_solids) {
     domain->grid->reduce_rigid_ghost_nodes();
   }
   update_Di = 0;
@@ -338,9 +281,8 @@ void ULMPM::compute_grid_weight_functions_and_gradients()
 
 void ULMPM::particles_to_grid() {
   bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-
-    if (isolid == 0)
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    if(isolid == 0)
       grid_reset = true;
     else
       grid_reset = false;
@@ -349,195 +291,84 @@ void ULMPM::particles_to_grid() {
   }
 
   domain->grid->reduce_mass_ghost_nodes();
-
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
     if (isolid == 0)
       grid_reset = true;
     else
       grid_reset = false;
 
-    if (apic)
-      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-
-    if (update->sub_method_type == Update::SubMethodType::MLS) {
-      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL_MLS(grid_reset);
-    } else {
-      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
-    }
-
-    if (temp) {
-      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
-      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
-      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
-    }
+    domain->solids[isolid]->compute_velocity_nodes(grid_reset);
+    domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
   }
   domain->grid->reduce_ghost_nodes(true, true, temp);
 }
 
-void ULMPM::particles_to_grid_USF_1() {
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-
-    if (isolid == 0)
-      grid_reset = true;
-    else
-      grid_reset = false;
-
-    domain->solids[isolid]->compute_mass_nodes(grid_reset);
-  }
-
-  domain->grid->reduce_mass_ghost_nodes();
-
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-
-    if (isolid == 0)
-      grid_reset = true;
-    else
-      grid_reset = false;
-
-    if (apic)
-      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    if (temp)
-      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
-  }
-  domain->grid->reduce_ghost_nodes(true, false, temp);
-}
-
-void ULMPM::particles_to_grid_USF_2() {
-  bool grid_reset = false; // Indicate if the grid quantities have to be reset
-
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-
-    if (isolid == 0)
-      grid_reset = true;
-    else
-      grid_reset = false;
-
-    if (update->sub_method_type == Update::SubMethodType::MLS) {
-      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL_MLS(grid_reset);
-    } else {
-      domain->solids[isolid]->compute_external_and_internal_forces_nodes_UL(grid_reset);
-    }
-
-    if (temp) {
-      domain->solids[isolid]->compute_external_temperature_driving_forces_nodes(grid_reset);
-      domain->solids[isolid]->compute_internal_temperature_driving_forces_nodes();
-    }
-  }
-  domain->grid->reduce_ghost_nodes(false, true, temp);
-}
-
-
 void ULMPM::update_grid_state() {
   domain->grid->update_grid_velocities();
-  if (temp)
-    domain->grid->update_grid_temperature();
 }
 
-void ULMPM::grid_to_points()
-{
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    //if (apic)
-    //  domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC();
-
-    if (domain->solids[isolid]->mat->rigid) {
+void ULMPM::grid_to_points() {
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    if(domain->solids[isolid]->mat->rigid) {
       domain->solids[isolid]->compute_particle_velocities_and_positions();
       domain->solids[isolid]->compute_particle_acceleration();
-    } else {
-      if (update->sub_method_type != Update::SubMethodType::ASFLIP)
-	domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
-      else
-	domain->solids[isolid]->compute_particle_accelerations_velocities();	
     }
-
-    if (temp) {
-      domain->solids[isolid]->update_particle_temperature();
+    else {
+      domain->solids[isolid]->compute_particle_accelerations_velocities_and_positions();
     }
   }
 }
 
-void ULMPM::advance_particles()
-{
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-    if (update->sub_method_type != Update::SubMethodType::ASFLIP)
-      domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
-    else
-      domain->solids[isolid]->update_particle_velocities_and_positions(update->PIC_FLIP);      
+void ULMPM::advance_particles() {
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    domain->solids[isolid]->update_particle_velocities(update->PIC_FLIP);
   }
 }
 
-void ULMPM::velocities_to_grid()
-{
+void ULMPM::velocities_to_grid() {
   bool grid_reset = false; // Indicate if the grid quantities have to be reset
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
-
-    if (isolid == 0)
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    if(isolid == 0)
       grid_reset = true;
     else
       grid_reset = false;
-
-    if (apic)
-      domain->solids[isolid]->compute_velocity_nodes_APIC(grid_reset);
-    else
-      domain->solids[isolid]->compute_velocity_nodes(grid_reset);
-    if (temp) {
-      domain->solids[isolid]->compute_temperature_nodes(grid_reset);
-    }
+    domain->solids[isolid]->compute_velocity_nodes(grid_reset);
   }
   domain->grid->reduce_ghost_nodes(true, false, temp);
 }
 
 void ULMPM::compute_rate_deformation_gradient(bool doublemapping) {
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-    if (apic) 
-      domain->solids[isolid]->compute_rate_deformation_gradient_UL_APIC(doublemapping);
-    else
-      domain->solids[isolid]->compute_rate_deformation_gradient_UL(doublemapping);
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
+    domain->solids[isolid]->compute_rate_deformation_gradient_UL(doublemapping);
   }
 }
 
-void ULMPM::update_deformation_gradient()
-{
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
+void ULMPM::update_deformation_gradient() {
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_deformation_gradient();
   }
 }
 
-void ULMPM::update_stress(bool doublemapping)
-{
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
+void ULMPM::update_stress(bool doublemapping) {
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
     domain->solids[isolid]->update_stress();
-    if (temp) {
-      domain->solids[isolid]->update_heat_flux(doublemapping);
-    }
   }
 }
 
-void ULMPM::adjust_dt()
-{
+void ULMPM::adjust_dt() {
   if (update->dt_constant) return; // dt is set as a constant, do not update
 
   double dtCFL = 1.0e22;
   double dtCFL_reduced = 1.0e22;
 
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
     dtCFL = MIN(dtCFL, domain->solids[isolid]->dtCFL);
-    if (dtCFL == 0)
-    {
+    if(dtCFL == 0) {
       cout << "Error: dtCFL == 0\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == 0\n";
       error->one(FLERR, "");
-    } else if (std::isnan(dtCFL)) {
+    }
+    else if(std::isnan(dtCFL)) {
       cout << "Error: dtCFL = " << dtCFL << "\n";
       cout << "domain->solids[" << isolid << "]->dtCFL == " << domain->solids[isolid]->dtCFL << "\n";
       error->one(FLERR, "");
@@ -550,15 +381,13 @@ void ULMPM::adjust_dt()
   (*input->vars)["dt"] = Var("dt", update->dt);
 }
 
-void ULMPM::reset()
-{
+void ULMPM::reset() {
   int np_local;
-
-  for (int isolid = 0; isolid < domain->solids.size(); isolid++)
-  {
+  for(int isolid = 0; isolid < domain->solids.size(); isolid++) {
     domain->solids[isolid]->dtCFL = 1.0e22;
     np_local = domain->solids[isolid]->np_local;
-    for (int ip = 0; ip < np_local; ip++) domain->solids[isolid]->mbp[ip].setZero();
+    for(int ip = 0; ip < np_local; ip++)
+      domain->solids[isolid]->mbp[ip].setZero();
   }
 }
 

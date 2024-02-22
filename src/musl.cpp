@@ -27,68 +27,42 @@ MUSL::MUSL(MPM *mpm) : Scheme(mpm) {
   // cout << "In MUSL::MUSL()" << endl;
 }
 
-void MUSL::setup(){
+void MUSL::setup() {
   output->setup();
 }
 
-void MUSL::run(Var condition){
-
+void MUSL::run(Var condition) {
   bigint ntimestep = update->ntimestep;
-  
-  // cout << "In MUSL::run" << endl;
-
   output->write(ntimestep);
 
-  //for (int i=0; i<nsteps; i++){
-  while ((bool) condition.result(mpm)) {
+  //for(int i=0; i<nsteps; i++){
+  while((bool) condition.result(mpm)) {
     ntimestep = update->update_timestep();
 
     update->method->compute_grid_weight_functions_and_gradients();
-
     update->method->reset();
     modify->initial_integrate();
-
-    update->method->particles_to_grid();
-
-    modify->post_particles_to_grid();
-
+    update->method->particles_to_grid();//@MPI MPI_Allreduce 1 element, check for rigid solids
     update->method->update_grid_state();
-
-    modify->post_update_grid_state();
-
+    modify->post_update_grid_state();//@MPI MPI_Allreduce in FixVelocityNodes, Vector3 forceTotal
     update->method->grid_to_points();
-
-    modify->post_grid_to_point();
-
     update->method->advance_particles();
-
-    modify->post_advance_particles();
-    
     update->method->velocities_to_grid();
-
     modify->post_velocities_to_grid();
-
-    update->method->update_grid_positions();
-
     update->method->compute_rate_deformation_gradient(true);
     update->method->update_deformation_gradient();
     update->method->update_stress(true);
-
-    update->method->exchange_particles();
-
+    update->method->exchange_particles();//@MPI: bunch of mpi sends and recvs
     update->update_time();
-    update->method->adjust_dt();
+    update->method->adjust_dt();//@MPI MPI_Allreduce 1 element, dtCFL_reduced for calculating the next time step (dt)
 
-    modify->final_integrate();
-
-
-    if ((update->maxtime != -1) && (update->atime > update->maxtime)) {
+    if((update->maxtime != -1) and (update->atime > update->maxtime)) {
       update->nsteps = ntimestep;
       output->write(ntimestep);
       break;
     }
 
-    if (ntimestep == output->next || ntimestep == update->nsteps) {
+    if(ntimestep == output->next or ntimestep == update->nsteps) {
       output->write(ntimestep);
     }
   }

@@ -128,96 +128,51 @@ void FixVelocityNodes::setmask() {
 
 
 void FixVelocityNodes::post_update_grid_state() {
-  // cout << "In FixVelocityNodes::post_update_grid_state()" << endl;
-
   // Go through all the nodes in the group and set v_update to the right value:
   double vx, vy, vz;
   double vx_old, vy_old, vz_old;
-
-  if (xset) {
+  if(xset) {
     vx = xvalue.result(mpm);
     vx_old = xprevvalue.result(mpm);
-    // cout << "Set v_update[0] to " << xvalue.eq() << "=" << vx << endl;
-    // cout << "Set v[0] to " << vx_old << endl;
   }
-
-  if (yset) {
+  if(yset) {
     vy = yvalue.result(mpm);
     vy_old = yprevvalue.result(mpm);
-    // cout << "Set v_update[1] to " << "=" <<  vy << endl;
-    // cout << "Set v[1] to " << "=" <<  vy_old << endl;
   }
-
-  if (zset) {
+  if(zset) {
     vz = zvalue.result(mpm);
     vz_old = zprevvalue.result(mpm);
-    // cout << "Set v_update[2] to " << "=" <<  vz << endl;
-    // cout << "Set v[2] to " << "=" <<  vz_old << endl;
   }
 
   int solid = group->solid[igroup];
-  Grid *g;
-
+  Grid *g = domain->solids[solid]->grid;
   Eigen::Vector3d Dv, ftot, ftot_reduced;
   ftot.setZero();
   double inv_dt = 1.0/update->dt;
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      g = domain->solids[isolid]->grid;
-
-      for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-	if (g->mask[ip] & groupbit) {
-	  Dv.setZero();
-	  if (xset) {
-	    Dv[0] = vx - g->v_update[ip][0];
-	    g->v_update[ip][0] = vx;
-	    g->v[ip][0] = vx_old;
-	  }
-	  if (yset) {
-	    Dv[1] = vy - g->v_update[ip][1];
-	    g->v_update[ip][1] = vy;
-	    g->v[ip][1] = vy_old;
-	  }
-	  if (zset) {
-	    Dv[2] = vz - g->v_update[ip][2];
-	    g->v_update[ip][2] = vz;
-	    g->v[ip][2] = vz_old;
-	  }
-          ftot += (inv_dt * g->mass[ip]) * Dv;
-	}
+  for(int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
+    if(g->mask[ip] & groupbit) {
+      Dv.setZero();
+      if(xset) {
+        Dv[0] = vx - g->v_update[ip][0];
+        g->v_update[ip][0] = vx;
+        g->v[ip][0] = vx_old;
       }
-    }
-  } else {
-
-    g = domain->solids[solid]->grid;
-
-    for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-      if (g->mask[ip] & groupbit) {
-	Dv.setZero();
-	if (xset) {
-	  Dv[0] = vx - g->v_update[ip][0];
-	  g->v_update[ip][0] = vx;
-	  g->v[ip][0] = vx_old;
-	}
-	if (yset) {
-	  Dv[1] = vy - g->v_update[ip][1];
-	  g->v_update[ip][1] = vy;
-	  g->v[ip][1] = vy_old;
-	}
-	if (zset) {
-	  Dv[2] = vz - g->v_update[ip][2];
-	  g->v_update[ip][2] = vz;
-	  g->v[ip][2] = vz_old;
-	}
-	ftot += (inv_dt * g->mass[ip]) * Dv;
+      if(yset) {
+        Dv[1] = vy - g->v_update[ip][1];
+        g->v_update[ip][1] = vy;
+        g->v[ip][1] = vy_old;
       }
+      if(zset) {
+        Dv[2] = vz - g->v_update[ip][2];
+        g->v_update[ip][2] = vz;
+        g->v[ip][2] = vz_old;
+      }
+      ftot += (inv_dt * g->mass[ip]) * Dv;
     }
   }
 
   // Reduce ftot:
-  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM,
-                universe->uworld);
+  MPI_Allreduce(ftot.data(), ftot_reduced.data(), 3, MPI_DOUBLE, MPI_SUM, universe->uworld);
 
   (*input->vars)[id + "_x"] = Var(id + "_x", ftot_reduced[0]);
   (*input->vars)[id + "_y"] = Var(id + "_y", ftot_reduced[1]);
@@ -225,47 +180,25 @@ void FixVelocityNodes::post_update_grid_state() {
 }
 
 void FixVelocityNodes::post_velocities_to_grid() {
-  // cout << "In FixVelocityNodes::post_velocities_to_grid()" << endl;
-
   // Go through all the particles in the group and set v to the right value:
   double vx, vy, vz;
-
-  if (xset) {
+  if(xset) {
     vx = xvalue.result(mpm);
   }
-
-  if (yset) {
+  if(yset) {
     vy = yvalue.result(mpm);
   }
-
-  if (zset) {
+  if(zset) {
     vz = zvalue.result(mpm);
   }
-  
+
   int solid = group->solid[igroup];
-  Grid *g;
-
-  if (solid == -1) {
-    for (int isolid = 0; isolid < domain->solids.size(); isolid++) {
-      g = domain->solids[isolid]->grid;
-
-      for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-	if (g->mask[ip] & groupbit) {
-	  if (xset) g->v[ip][0] = vx;
-	  if (yset) g->v[ip][1] = vy;
-	  if (zset) g->v[ip][2] = vz;
-	}
-      }
-    }
-  } else {
-    g = domain->solids[solid]->grid;
-
-    for (int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
-      if (g->mask[ip] & groupbit) {
-	if (xset) g->v[ip][0] = vx;
-	if (yset) g->v[ip][1] = vy;
-	if (zset) g->v[ip][2] = vz;
-      }
+  Grid *g = domain->solids[solid]->grid;
+  for(int ip = 0; ip < g->nnodes_local + g->nnodes_ghost; ip++) {
+    if(g->mask[ip] & groupbit) {
+      if(xset) g->v[ip][0] = vx;
+      if(yset) g->v[ip][1] = vy;
+      if(zset) g->v[ip][2] = vz;
     }
   }
 }
