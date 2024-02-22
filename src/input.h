@@ -43,12 +43,13 @@ public:
   class Var parsev(string);    ///< Parse an input text line.
   double parse(string);        ///< Deprecated function
 
+public:
+  string line, copy;           ///< input line string
+  int line_number;             ///< line number of the input file being processed
 
 private:
   int me;                      ///< Proc ID
   char *command;               ///< Pointer to current command
-  string line, copy;           ///< input line string
-  int line_number;             ///< line number of the input file being processed
   int maxline, maxcopy;        ///< max lengths of char strings
   int maxarg;                  ///< max number of args in arg
 
@@ -95,6 +96,7 @@ private:
   typedef class Var (*CommandCreator)(MPM *,vector<string>);
   typedef map<string,CommandCreator> CommandCreatorMap;
   CommandCreatorMap *command_map;           ///< Map of the commands listed in style_command.h
+  filebuf* getInputFile() { return this->infile; }
 
  protected:
   template <typename T> static class Var command_creator(MPM *,vector<string>);
