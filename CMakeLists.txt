@@ -1,15 +1,45 @@
 cmake_minimum_required(VERSION 3.5)
 
-set (CMAKE_CXX_STANDARD 14)
+project(hh_karamelo CXX)
+
+set(CMAKE_CXX_STANDARD 20)
 
 find_package(Git)
 if(Git_FOUND)
   message("Git found: ${GIT_EXECUTABLE}")
 endif()
 
-cmake_policy(SET CMP0004 OLD)
+# Download git repos via cmake instead of using submodules
+include(FetchContent)
+FetchContent_Declare(
+    Eigen3
+    GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+    GIT_TAG 3.4.0
+    OVERRIDE_FIND_PACKAGE
+)
+FetchContent_MakeAvailable(Eigen3)
 
-project(karamelo)
+if(NOT Hedgehog_INCLUDE_DIR)
+  # Hedgehog 3.0
+  FetchContent_Declare(
+    Hedgehog
+    GIT_REPOSITORY https://github.com/usnistgov/hedgehog.git
+    GIT_TAG        master
+  )
+  FetchContent_GetProperties(Hedgehog)
+  if(NOT hedgehog_POPULATED)
+    FetchContent_Populate(Hedgehog)
+  endif(NOT hedgehog_POPULATED)
+
+  # Need to set variable Hedgehog_INCLUDE_DIR to the downloaded hedgehog src code
+  set(Hedgehog_INCLUDE_DIR "${hedgehog_SOURCE_DIR}" CACHE STRING "${hedgehog_SOURCE_DIR}" FORCE)
+endif(NOT Hedgehog_INCLUDE_DIR)
+
+# Test NewHedgehog library
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake-modules")
+find_package(Hedgehog REQUIRED)
+
+cmake_policy(SET CMP0004 OLD)
 
 if(WIN32)
   set(EIGEN3_INCLUDE_DIR "C:/Program Files/Eigen")
@@ -71,16 +101,17 @@ execute_process(COMMAND
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/src/version.cpp" @ONLY)
 
 file(GLOB MyCSources src/*.cpp)
+list(REMOVE_ITEM MyCSources "${CMAKE_SOURCE_DIR}/src/hh3_taylorbar_demo.cpp")
 add_executable(karamelo ${MyCSources})
 
-add_subdirectory(docs EXCLUDE_FROM_ALL)
+#add_subdirectory(docs EXCLUDE_FROM_ALL)
 add_subdirectory(third-party/gzstream)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
 
-target_compile_options(${PROJECT_NAME} PRIVATE ${MPI_CXX_COMPILE_FLAGS})
+target_compile_options(karamelo PRIVATE ${MPI_CXX_COMPILE_FLAGS})
 if(!WIN32)
-  target_compile_options(${PROJECT_NAME} PRIVATE "-march=native")
+  target_compile_options(karamelo PRIVATE "-march=native")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
   set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_PROFILING} -O3 -g")
 else()
@@ -88,4 +119,9 @@ else()
   set(CMAKE_CXX_FLAGS_PROFILING "${CMAKE_CXX_FLAGS_PROFILING} -O2 -g")
 endif()
 
-target_link_libraries(${PROJECT_NAME} PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} gzstream)
+target_link_libraries(karamelo PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} gzstream Eigen3::Eigen)
+
+list(REMOVE_ITEM MyCSources "${CMAKE_SOURCE_DIR}/src/main.cpp")
+add_executable(hh3_taylorbar_demo src/hh3_taylorbar_demo.cpp ${MyCSources})
+target_include_directories(hh3_taylorbar_demo PUBLIC ${Hedgehog_INCLUDE_DIRS})
+target_link_libraries(hh3_taylorbar_demo PUBLIC ${MPI_CXX_LIBRARIES} ${MPI_CXX_LINK_FLAGS} gzstream Eigen3::Eigen ${Hedgehog_LIBRARIES})
