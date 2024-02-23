@@ -30,7 +30,6 @@
 
 MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 {
-  memory = new Memory(this);
   error = new Error(this);
   universe = new Universe(this, communicator);
   input = new Input(this, narg, arg);
@@ -97,7 +96,6 @@ MPM::MPM(int narg, char **arg, MPI_Comm communicator)
 
 MPM::~MPM()
 {
-  delete memory;
   delete error;
   delete input;
   delete output;

@@ -30,7 +30,6 @@ class Pointers {
  public:
  Pointers(MPM *ptr) :
    mpm(ptr),
-   memory(ptr->memory),
    error(ptr->error),
    universe(ptr->universe),
    input(ptr->input),
@@ -46,7 +45,6 @@ class Pointers {
   virtual ~Pointers() {}
  protected:
   MPM *mpm;
-  Memory *&memory;
   Error *&error;
   Universe *&universe;
   Input *&input;

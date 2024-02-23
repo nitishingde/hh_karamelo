@@ -26,7 +26,6 @@ using namespace std;
 
 /*! Main class creating all the others.*/
 
-class Memory;
 class Error;
 class Universe;
 class Input;
@@ -41,8 +40,6 @@ class Group;
 class MPM {
 
  public:
-
-  Memory *memory;          ///< memory allocation functions
   Error *error;            ///< error handling
   Universe *universe;      ///< universe of processors
   Input *input;            ///< input script processing
