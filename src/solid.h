@@ -127,28 +127,28 @@ class Solid : protected Pointers {
 
   void compute_mass_nodes(bool);                    ///< Compute nodal mass step of the Particle to Grid step of the MPM algorithm.
   void compute_velocity_nodes(bool);                ///< Compute nodal velocity (via momentum) step of the Particle to Grid step of the MPM algorithm.
-  void compute_velocity_nodes_APIC(bool);           ///< Specific function that computes the nodal velocity (via momentum) when using Affine PIC (APIC).
-  void compute_external_forces_nodes(bool);         ///< Compute external forces step of the Particle to Grid step of the MPM algorithm.
-  void compute_internal_forces_nodes_TL();          ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
+  void compute_velocity_nodes_APIC(bool) {throw std::runtime_error("@nitish");}           ///< Specific function that computes the nodal velocity (via momentum) when using Affine PIC (APIC).
+  void compute_external_forces_nodes(bool) {throw std::runtime_error("@nitish");}         ///< Compute external forces step of the Particle to Grid step of the MPM algorithm.
+  void compute_internal_forces_nodes_TL() {throw std::runtime_error("@nitish");}          ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
   void compute_external_and_internal_forces_nodes_UL(bool);      ///< Compute both external and internal forces step of the Particle to Grid step of the updated Lagrangian MPM algorithm.
-  void compute_external_and_internal_forces_nodes_UL_MLS(bool);      ///< Compute both external and internal forces step of the Particle to Grid step of the moving least square updated Lagrangian MPM algorithm.
-  void compute_particle_velocities_and_positions(); ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
+  void compute_external_and_internal_forces_nodes_UL_MLS(bool) {throw std::runtime_error("@nitish");}      ///< Compute both external and internal forces step of the Particle to Grid step of the moving least square updated Lagrangian MPM algorithm.
+  void compute_particle_velocities_and_positions() {throw std::runtime_error("@nitish");} ///< Compute the particles' temporary velocities and position, part of the Grid to Particles step of the MPM algorithm.
   void compute_particle_accelerations_velocities_and_positions(); ///< Compute the particles' temporary acceleration, velocities and position, part of the Grid to Particles step of the MPM algorithm.
-  void compute_particle_accelerations_velocities(); ///< Compute the particles' temporary acceleration and velocities, part of the Grid to Particles step of the MPM algorithm.
-  void compute_particle_acceleration();             ///< Update the particles' acceleration
+  void compute_particle_accelerations_velocities() {throw std::runtime_error("@nitish");} ///< Compute the particles' temporary acceleration and velocities, part of the Grid to Particles step of the MPM algorithm.
+  void compute_particle_acceleration() {throw std::runtime_error("@nitish");}             ///< Update the particles' acceleration
   void update_particle_velocities(double);          ///< Update the particles' velocities based on either PIC and/or FLIP.
-  void update_particle_velocities_and_positions(double);          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
+  void update_particle_velocities_and_positions(double) {throw std::runtime_error("@nitish");}          ///< Update the particles' velocities based on either PIC and/or FLIP and update the positions using the updated velocities.
                                                     ///< The argument is the ratio \f$\alpha\f$ used between PIC and FLIP.
                                                     ///< \f$\alpha = 0\f$ for pure PIC, \f$\alpha = 1\f$ for pure FLIP.
-  void compute_rate_deformation_gradient_TL(bool);      ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
-  void compute_rate_deformation_gradient_TL_APIC(bool); ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is used.
+  void compute_rate_deformation_gradient_TL(bool) {throw std::runtime_error("@nitish");}    ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is not used.
+  void compute_rate_deformation_gradient_TL_APIC(bool) {throw std::runtime_error("@nitish");} ///< Compute the time derivative of the deformation matrix for TLMPM, when APIC is used.
   void compute_rate_deformation_gradient_UL(bool);  ///< Compute the time derivative of the deformation matrix for ULMPM, when using Update Stress Last and APIC is not used.
-  void compute_rate_deformation_gradient_UL_APIC(bool); ///< Compute the time derivative of the deformation matrix for ULMPM, when APIC is in use.
+  void compute_rate_deformation_gradient_UL_APIC(bool) {throw std::runtime_error("@nitish");} ///< Compute the time derivative of the deformation matrix for ULMPM, when APIC is in use.
   void update_deformation_gradient();               ///< Update the deformation gradient, volume, density, and the necessary strain matrices
   void update_stress();                             ///< Calculate the stress, damage and temperature at each particle, and determine the maximum allowed time step.
-  void compute_inertia_tensor();                    ///< Compute the inertia tensor necessary for the Affice PIC.
-  void compute_deformation_gradient();              ///< Compute the deformation gradient directly from the grid nodes' positions
-  void update_particle_domain();                    ///< Update the particle domain. Used with CPDI
+  void compute_inertia_tensor() {throw std::runtime_error("@nitish");}                    ///< Compute the inertia tensor necessary for the Affice PIC.
+  void compute_deformation_gradient() {throw std::runtime_error("@nitish");}              ///< Compute the deformation gradient directly from the grid nodes' positions
+  void update_particle_domain() {throw std::runtime_error("@nitish");}                   ///< Update the particle domain. Used with CPDI
 
   void copy_particle(int, int);                     ///< Copy particle i attribute and copy it to particle j.
                                                     ///< This function is used to re-order the memory arrangment of particles.
@@ -156,19 +156,19 @@ class Solid : protected Pointers {
   void pack_particle(int, vector<double> &);        ///< Pack particles attributes into a buffer (used for generating a restart).
   void unpack_particle(int &, vector<int>, vector<double> &); ///< Unpack particles attributes from a buffer (used when reading a restart).
 
-  void write_restart(ofstream*);                    ///< Write solid information in the restart file
-  void read_restart(ifstream*);                     ///< Read solid information from the restart file
+  void write_restart(ofstream*) {throw std::runtime_error("@nitish");}                    ///< Write solid information in the restart file
+  void read_restart(ifstream*) {throw std::runtime_error("@nitish");}                     ///< Read solid information from the restart file
 
-  void compute_temperature_nodes(bool);             ///< Compute nodal temperature step of the particle
-  void compute_external_temperature_driving_forces_nodes(bool); ///< Compute external temperature driving forces
-  void compute_internal_temperature_driving_forces_nodes(); ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
-  void update_particle_temperature();               ///< Update the particles' temperature
-  void update_heat_flux(bool);                      ///< Update the particles' heat source and fluxes
+  void compute_temperature_nodes(bool) {throw std::runtime_error("@nitish");}             ///< Compute nodal temperature step of the particle
+  void compute_external_temperature_driving_forces_nodes(bool) {throw std::runtime_error("@nitish");} ///< Compute external temperature driving forces
+  void compute_internal_temperature_driving_forces_nodes() {throw std::runtime_error("@nitish");} ///< Compute internal forces step of the Particle to Grid step of the total Lagrangian MPM algorithm.
+  void update_particle_temperature() {throw std::runtime_error("@nitish");}               ///< Update the particles' temperature
+  void update_heat_flux(bool) {throw std::runtime_error("@nitish");}                      ///< Update the particles' heat source and fluxes
 
 private:
   void populate(vector<string>);
-  void read_mesh(string);
-  void read_file(string);
+  void read_mesh(string) {throw std::runtime_error("@nitish");}
+  void read_file(string) {throw std::runtime_error("@nitish");}
 
   const map<string, string> usage ={
     {"region", "Usage: solid(solid-ID, \033[1;32mregion\033[0m, region-ID, N_ppc1D, material-ID, cell-size, T0)\n"},
